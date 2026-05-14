@@ -2,10 +2,11 @@ FROM lswl/vertex-base:latest
 LABEL maintainer="lswl.in"
 LABEL build_from="https://github.com/vertex-app/vertex"
 
+ARG REPO_URL=https://github.com/vertex-app/vertex.git
 ENV TZ=Asia/Shanghai
 RUN \
   apk add --no-cache gcc g++ python3 git cmake make npm libc-dev && \
-  git clone https://github.com/vertex-app/vertex.git /app/vertex && \
+  git clone "$REPO_URL" /app/vertex && \
   cd /app/vertex && \
   git checkout COMMIT_ID && \
   rm .git webui -rf && \
