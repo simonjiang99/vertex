@@ -13,16 +13,17 @@ exports.login = async function (username, clientUrl, password) {
     }
   };
   const res = await util.requestPromise(message);
-  if (res.body.indexOf('Ok') !== -1) {
+  const cookie = res.headers['set-cookie'] && res.headers['set-cookie'][0];
+  if (res.body && res.body.indexOf('Fails') !== -1) {
+    throw new Error('password is wrong!');
+  }
+  if ((res.body && res.body.indexOf('Ok') !== -1) || res.statusCode === 204 || cookie) {
     Object.keys(apiVersionCache).forEach(key => {
       if (key.startsWith(clientUrl)) {
         delete apiVersionCache[key];
       }
     });
-    return res.headers['set-cookie'][0].substring(0, res.headers['set-cookie'][0].indexOf(';'));
-  }
-  if (res.body.indexOf('Fails') !== -1) {
-    throw new Error('password is wrong!');
+    return cookie.substring(0, cookie.indexOf(';'));
   }
   if (res.statusCode !== 200) {
     throw new Error('StatusCode is ' + res.statusCode);

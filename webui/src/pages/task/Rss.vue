@@ -161,7 +161,7 @@
         </a-form-item>
         <a-form-item
           label="Cookie"
-          v-if="rss.scrapeHr || rss.scrapeFree"
+          v-if="rss.scrapeHr || rss.scrapeFree || rss.pushTorrentFile"
           name="cookie"
           extra="Cookie, M-Team 为 api key"
           :rules="[{ required: true, message: '${label}不可为空! ' }]">

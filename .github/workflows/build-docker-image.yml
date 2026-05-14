@@ -7,6 +7,10 @@ on:
     - stable
     - release
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build_docker_image:
     runs-on: ubuntu-latest
@@ -31,10 +35,10 @@ jobs:
         echo "CI_COMMIT_MESSAGE=$CI_COMMIT_MESSAGE" >> $GITHUB_ENV
         echo "CI_COMMIT_BRANCH=$CI_COMMIT_BRANCH" >> $GITHUB_ENV
         echo "CI_COMMIT_SHA=${{ github.event.head_commit.id }}" >> $GITHUB_ENV
-        echo "IMAGE_TAG_LATEST=lswl/vertex:latest" >> $GITHUB_ENV
+        echo "IMAGE_TAG_LATEST=ghcr.io/simonjiang99/vertex:stable" >> $GITHUB_ENV
         echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
-        echo "IMAGE_TAG_BRANCH=lswl/vertex:$CI_COMMIT_BRANCH" >> $GITHUB_ENV
-        echo "IMAGE_TAG_TIMEVERSION=lswl/vertex:$TIMEVERSION" >> $GITHUB_ENV
+        echo "IMAGE_TAG_BRANCH=ghcr.io/simonjiang99/vertex:$CI_COMMIT_BRANCH" >> $GITHUB_ENV
+        echo "IMAGE_TAG_TIMEVERSION=ghcr.io/simonjiang99/vertex:$TIMEVERSION" >> $GITHUB_ENV
         echo "PUSH_TIME=$PUSH_TIME" >> $GITHUB_ENV
         echo "KEY=$KEY" >> $GITHUB_ENV
     - name: Push Start Message
@@ -85,20 +89,20 @@ jobs:
         docker context create context_name
         docker buildx create --name buildx_name --use context_name
         docker buildx inspect --bootstrap
-        docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
         mkdir docker/src
         mv app/static docker/src
         cd docker
         sed -i 's/COMMIT_ID/'$CI_COMMIT_SHA'/' Dockerfile
         ls src/static
-        docker pull --platform linux/arm64 lswl/vertex:latest || echo 'fail'
-        docker pull --platform linux/amd64 lswl/vertex:latest || echo 'fail'
+        docker pull --platform linux/arm64 $IMAGE_TAG_LATEST || echo 'fail'
+        docker pull --platform linux/amd64 $IMAGE_TAG_LATEST || echo 'fail'
     - name: Build Docker Images
       working-directory: ./docker
       run: |
-        docker buildx build --platform linux/amd64,linux/arm64 --cache-from lswl/vertex --tag $IMAGE_TAG_LATEST --build-arg BUILDKIT_INLINE_CACHE=1 . --push
-        docker buildx build --platform linux/amd64,linux/arm64 --cache-from lswl/vertex --tag $IMAGE_TAG_BRANCH --build-arg BUILDKIT_INLINE_CACHE=1 . --push
-        docker buildx build --platform linux/amd64,linux/arm64 --cache-from lswl/vertex --tag $IMAGE_TAG_TIMEVERSION --build-arg BUILDKIT_INLINE_CACHE=1 . --push
+        docker buildx build --platform linux/amd64,linux/arm64 --cache-from $IMAGE_TAG_LATEST --tag $IMAGE_TAG_LATEST --build-arg BUILDKIT_INLINE_CACHE=1 . --push
+        docker buildx build --platform linux/amd64,linux/arm64 --cache-from $IMAGE_TAG_LATEST --tag $IMAGE_TAG_BRANCH --build-arg BUILDKIT_INLINE_CACHE=1 . --push
+        docker buildx build --platform linux/amd64,linux/arm64 --cache-from $IMAGE_TAG_LATEST --tag $IMAGE_TAG_TIMEVERSION --build-arg BUILDKIT_INLINE_CACHE=1 . --push
     - name: Push Finish Message
       run: |
         curl --location --request POST 'https://vertex-push.lswl.workers.dev' \
