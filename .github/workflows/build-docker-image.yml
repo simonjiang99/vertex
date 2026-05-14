@@ -25,17 +25,18 @@ jobs:
         cache: 'npm'
     - name: Prepare ENV
       run: |
-        CI_COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+        CI_COMMIT_MESSAGE="${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message || github.event.repository.description || 'manual build' }}"
         CI_COMMIT_MESSAGE=`echo $CI_COMMIT_MESSAGE | sed 's/\n//g'`
         CI_COMMIT_BRANCH=$GITHUB_REF_NAME
-        CI_COMMIT_TIMESTAMP="${{ github.event.head_commit.timestamp }}"
+        CI_COMMIT_TIMESTAMP="${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}"
+        CI_COMMIT_SHA="${{ github.sha }}"
         KEY="${{ secrets.KEY }}"
-        PUSH_TIME=$(TZ=Asia/Shanghai date -d $CI_COMMIT_TIMESTAMP "+%Y-%m-%d %H:%M:%S")
-        TIMEVERSION=$(TZ=Asia/Shanghai date -d $CI_COMMIT_TIMESTAMP "+%Y.%m.%d")
+        PUSH_TIME=$(TZ=Asia/Shanghai date -d "$CI_COMMIT_TIMESTAMP" "+%Y-%m-%d %H:%M:%S")
+        TIMEVERSION=$(TZ=Asia/Shanghai date -d "$CI_COMMIT_TIMESTAMP" "+%Y.%m.%d")
         echo "PUSH_TIME=$PUSH_TIME" >> $GITHUB_ENV
         echo "CI_COMMIT_MESSAGE=$CI_COMMIT_MESSAGE" >> $GITHUB_ENV
         echo "CI_COMMIT_BRANCH=$CI_COMMIT_BRANCH" >> $GITHUB_ENV
-        echo "CI_COMMIT_SHA=${{ github.event.head_commit.id }}" >> $GITHUB_ENV
+        echo "CI_COMMIT_SHA=$CI_COMMIT_SHA" >> $GITHUB_ENV
         echo "IMAGE_TAG_LATEST=ghcr.io/simonjiang99/vertex:stable" >> $GITHUB_ENV
         echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
         echo "IMAGE_TAG_BRANCH=ghcr.io/simonjiang99/vertex:$CI_COMMIT_BRANCH" >> $GITHUB_ENV
