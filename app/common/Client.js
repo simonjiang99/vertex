@@ -549,7 +549,7 @@ class Client {
   };
 
   async pushSpaceAlarm () {
-    if (!this.spaceAlarm || this.alarmSpace < this.maindata.freeSpaceOnDisk) return;
+    if (!this.spaceAlarm || !this.maindata || this.alarmSpace < this.maindata.freeSpaceOnDisk) return;
     try {
       await this.ntf.spaceAlarm(this);
     } catch (e) {

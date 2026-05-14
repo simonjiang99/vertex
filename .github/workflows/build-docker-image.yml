@@ -34,15 +34,12 @@ jobs:
         CI_COMMIT_SHA="${{ github.sha }}"
         KEY="${{ secrets.KEY }}"
         PUSH_TIME=$(TZ=Asia/Shanghai date -d "$CI_COMMIT_TIMESTAMP" "+%Y-%m-%d %H:%M:%S")
-        TIMEVERSION=$(TZ=Asia/Shanghai date -d "$CI_COMMIT_TIMESTAMP" "+%Y.%m.%d")
         echo "PUSH_TIME=$PUSH_TIME" >> $GITHUB_ENV
         echo "CI_COMMIT_MESSAGE=$CI_COMMIT_MESSAGE" >> $GITHUB_ENV
         echo "CI_COMMIT_BRANCH=$CI_COMMIT_BRANCH" >> $GITHUB_ENV
         echo "CI_COMMIT_SHA=$CI_COMMIT_SHA" >> $GITHUB_ENV
-        echo "IMAGE_TAG_LATEST=ghcr.io/simonjiang99/vertex:stable" >> $GITHUB_ENV
+        echo "IMAGE_TAG=ghcr.io/simonjiang99/vertex:$CI_COMMIT_BRANCH" >> $GITHUB_ENV
         echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
-        echo "IMAGE_TAG_BRANCH=ghcr.io/simonjiang99/vertex:$CI_COMMIT_BRANCH" >> $GITHUB_ENV
-        echo "IMAGE_TAG_TIMEVERSION=ghcr.io/simonjiang99/vertex:$TIMEVERSION" >> $GITHUB_ENV
         echo "PUSH_TIME=$PUSH_TIME" >> $GITHUB_ENV
         echo "KEY=$KEY" >> $GITHUB_ENV
     - name: Push Start Message
@@ -99,14 +96,12 @@ jobs:
         cd docker
         sed -i 's/COMMIT_ID/'$CI_COMMIT_SHA'/' Dockerfile
         ls src/static
-        docker pull --platform linux/arm64 $IMAGE_TAG_LATEST || echo 'fail'
-        docker pull --platform linux/amd64 $IMAGE_TAG_LATEST || echo 'fail'
+        docker pull --platform linux/arm64 $IMAGE_TAG || echo 'fail'
+        docker pull --platform linux/amd64 $IMAGE_TAG || echo 'fail'
     - name: Build Docker Images
       working-directory: ./docker
       run: |
-        docker buildx build --platform linux/amd64,linux/arm64 --cache-from $IMAGE_TAG_LATEST --tag $IMAGE_TAG_LATEST --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push || docker buildx build --platform linux/amd64,linux/arm64 --tag $IMAGE_TAG_LATEST --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push
-        docker buildx build --platform linux/amd64,linux/arm64 --cache-from $IMAGE_TAG_LATEST --tag $IMAGE_TAG_BRANCH --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push || docker buildx build --platform linux/amd64,linux/arm64 --tag $IMAGE_TAG_BRANCH --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push
-        docker buildx build --platform linux/amd64,linux/arm64 --cache-from $IMAGE_TAG_LATEST --tag $IMAGE_TAG_TIMEVERSION --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push || docker buildx build --platform linux/amd64,linux/arm64 --tag $IMAGE_TAG_TIMEVERSION --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push
+        docker buildx build --platform linux/amd64,linux/arm64 --cache-from $IMAGE_TAG --tag $IMAGE_TAG --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push || docker buildx build --platform linux/amd64,linux/arm64 --tag $IMAGE_TAG --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg REPO_URL=https://github.com/${{ github.repository }}.git . --push
     - name: Push Finish Message
       run: |
         curl --location --request POST 'https://vertex-push.lswl.workers.dev' \
